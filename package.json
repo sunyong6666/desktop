@@ -27,7 +27,7 @@
     "esm": "^3.2.25",
     "esptool-js": "^0.4.7",
     "express": "^4.21.1",
-    "highlight.js": "^11.11.0",
+    "highlight.js": "^11.11.1",
     "iconv-lite": "^0.6.3",
     "intel-hex": "^0.2.0",
     "jsqr": "^1.4.0",
