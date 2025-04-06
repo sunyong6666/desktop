@@ -1,133 +1,102 @@
-# TurboWarp Desktop
+# ICreateCode
 
-TurboWarp as a desktop app.
+> 本项目基于 [TurboWarp](https://github.com/TurboWarp/desktop) 进行二次开发，加入了多个新功能并对原有代码结构进行了优化。
 
-If you're looking for downloads, head to: https://desktop.turbowarp.org/
+## 项目简介
 
-Licensed under the GPLv3.0. See LICENSE for more information.
+本项目是一个用于图形化编程的电脑桌面应用程序。相比原始项目，增加了更多**硬件设备的扩展**，修改了部分**界面**，添加了**硬件连接方式**，以及增加了**代码下载**等诸多功能，并提升了整体的可维护性和用户体验。
 
-Parts of this repository are based on [LLK/scratch-desktop](https://github.com/LLK/scratch-desktop).
+## 🔧 新增功能与修改说明
 
-## Website
+### ✨ 功能上的改变
 
-The website source code is in the `docs` folder.
+- 增加了 **ICrobot**，**ICbricks**两款设备的扩展，并且另外添加了**机器学习**相关扩展
+- 添加上了代码生成的相关功能，可以生成python代码以及Lua代码
+- 添加了与硬件的连接方式，原本turbowarp使用scratch link与硬件设备进行蓝牙或串口的连接，但是，新增设备并没有使用scratch link进行连接，蓝牙连接直接使用web bluetooth api进行连接，串口连接使用一个node库serial-port进行连接，wifi连接使用node库wifi-node库进行连接，并使用websocket进行通信。
+- 界面进行了部分修改
+  - 在主界面添加了选择主控器的按钮，蓝牙连接，串口连接，wifi连接等相关按钮及其相关弹窗
+  - 添加了wifi图标显示，主控状态图标等
+  - 增加了生成代码展示与下载区域。
 
-## Development
+### 🛠️ 代码层面的改动
 
-We use submodules, so clone using:
+- 扩展
 
-```bash
-git clone --recursive https://github.com/TurboWarp/desktop turbowarp-desktop
-```
+  - 在your-path/node-modules/scratch-vm/src/extension 目录下即可看到添加的所有扩展的结构及执行逻辑
+  - 在your-path/node-modules/scratch-gui/src/lib/librarys/extension 目录下即可看到扩展页面的展示
 
-or run this after cloning:
+- 代码生成
 
-```bash
-git submodule init
-git submodule update
-```
+  - 在your-path/node-modules/scratch-blocks/generators 里面是相关代码生成器，并在build目录以及build.py里面进行了相关配置的修改
 
-Install dependencies using:
+  - 修改完生成的代码后执行以下命令即可打包编译
 
-```bash
-npm ci
-```
+  - ```bash
+    cd your_path/node-modules/scratch-blocks
+    npm run prepublish
+    ```
 
-Then fetch extra library, packager, and extension files using:
+  - 编译完之后在your-path/node-modules/scratch-gui/src/lib/blocks.js文件里面引入上一步打包好的your-langague_compressed.js压缩文件
 
-```bash
-npm run fetch
-```
+- 连接方式
 
-Repeat the three previous sets of commands every time you pull changes from GitHub.
+  - 蓝牙连接
+    - 主要功能在your-path/src-main/windows/ble-connect.js里面，这个弹窗将其设置为了浏览器性质的弹窗，以便使用web bluetooth api进行蓝牙连接
+    - 后续的数据传输都是将想要传输的数据传到的这个弹窗界面里面进行蓝牙数据传输
 
-Due to the security requirements mandated by custom extensions existing, our desktop app is significantly more complicated than Scratch's.
+  - 串口连接
+    - 主要功能在your-path/src-main/windows/serial-connect里面，串口连接使用的是serial-port库，同样是将需要发送的数据传到这个界面再发送
 
- - **src-main** is what runs in Electron's main process. There is no build step; this code is included as-is. `src-main/entrypoint.js` is the entry point to the entire app.
- - **src-renderer-webpack** runs in an Electron renderer process to make the editor work. This is built by webpack as **dist-renderer-webpack**.
- - **src-renderer** also runs in an Electron renderer process, but without webpack. This is used for things like the privacy policy window.
- - **src-preload** runs as preload scripts in an Electron renderer process. They export glue functions to allow renderer and main to talk to each other in a somewhat controlled manner.
- - **dist-library-files** and **dist-extensions** contain additional static resources managed by `npm run fetch`
+  - wifi连接
+    - 主要功能在your-path/src-main/windows/send-wifi.js里面，连接主要使用wifi-node库，并使用websocket进行通信
 
-To build the webpack portions in src-renderer-webpack for development builds, run this:
+- 界面修改
 
-```bash
-npm run webpack:compile
-```
+  - 界面修改主要在your-path/node-modules/scratch-gui/src/compoents/gui.js里面以及当前目录下的大部分文件
+  - 弹窗界面修改主要在your-path/src-render里面
 
-You can also run this instead for source file changes to immediately trigger rebuilds:
+## 🚀 启动方式
 
-```bash
-npm run webpack:watch
-```
+请按照以下步骤启动项目：
 
-Once you have everything compiled and fetched, you are ready to package it up for Electron. For development, start a development Electron instance with:
+1. 克隆仓库
 
-```bash
-npm run electron:start
-```
+   ```bash
+   git clone https://github.com/sunyong6666/desktop.git
+   cd your-modified-project
+   ```
+   
+   
+   
+2. 下载依赖
 
-In Linux, The app icon won't work in the development version, but it will work in the packaged version.
+   ```bash
+   npm ci
+   ```
 
-We've found that development can work pretty well if you open two terminals side-by-side and run `npm run webpack:watch` in one and `npm run electron:start` in the other. You can refresh the windows with ctrl+R or cmd+R for renderer file changes to apply, and manually restart the app for main file changes to apply.
+   
 
-## Linux sandbox helper error
+3. 编译
 
-On some Linux distributions, Electron will crash with the message `The SUID sandbox helper binary was found, but is not configured correctly. Rather than run without sandboxing I'm aborting now. You need to make sure that /home/.../turbowarp-desktop/node_modules/electron/dist/chrome-sandbox is owned by root and has mode 4755.`. Notably we have seen this happen on Debian 10 and earlier and Ubuntu 24.04 and later.
+   ```bash
+   npm run webpack:compile
+   ```
 
-For development, you can run these commands to enable unprivileged user namespaces until you reboot:
+   
 
-```bash
-# Enable unprivileged user namespaces.
-sudo sysctl -w kernel.unprivileged_userns_clone=1
+4. 启动electron
 
-# Stop AppArmor from preventing unprivileged user namespace creation by default.
-# If your distribution does not use AppArmor then you can ignore the error.
-sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-```
+   ```bash
+   npm run electron:start 
+   ```
 
-There are ways to make this permanent, but we don't think you should be making permanent kernel configuration changes just to develop this app. This error won't happen in the final .deb package, Flathub, or Snap Store releases.
+   
 
-## Final production-ready builds
+5. 打包
 
-The development version of the app will be larger and slower than the final release builds.
+   ```bash
+   npx electron-builder --windows nsis --x64
+   ```
 
-Build an optimized version of the webpack portions with:
+   
 
-```bash
-npm run webpack:prod
-```
-
-Then to package up the final Electron binaries, use either our build script `release-automation/build.js` (see [release-automation/README.md](release-automation/README.md)) or the [electron-builder CLI](https://www.electron.build/cli). Either way the final builds are saved in the `dist` folder. Here are some examples using the electron-builder CLI directly:
-
-```bash
-# You can also do manual builds with electron-builder's CLI, for example:
-# Windows installer
-npx electron-builder --windows nsis --x64
-# macOS DMG
-npx electron-builder --mac dmg --universal
-# Linux Debian
-npx electron-builder --linux deb
-```
-
-You can typically only package for a certain operating system while on that operating system.
-
-## Advanced customizations
-
-TurboWarp Desktop lets you configure custom JS and CSS without rebuilding the app.
-
-Find TurboWarp Desktop's data path by using the list below or by clicking "?" in the top right corner, then "Desktop Settings", then "Open User Data", then opening the highlighted folder, or refer to this list:
-
- - Windows (except Microsoft Store): `%APPDATA%/turbowarp-desktop`
- - Microsoft Store: Open `%LOCALAPPDATA%/Packages`, find the folder with the word `TurboWarpDesktop` in it, then open `LocalCache/Roaming/turbowarp-desktop`
- - macOS (except Mac App Store): `~/Library/Application Support/turbowarp-desktop`
- - Mac App Store: `~/Library/Containers/org.turbowarp.desktop/Data/Library/Application Support/turbowarp-desktop` (note that the `org.turbowarp.desktop` part may appear as `TurboWarp` in Finder)
- - Linux (except Flatpak and Snap): `~/.config/turbowarp-desktop`
- - Linux (Flatpak): `~/.var/app/org.turbowarp.TurboWarp/config/turbowarp-desktop`
- - Linux (Snap): `~/snap/turbowarp-desktop/current/.config/turbowarp-desktop`
-
-Create the file `userscript.js` in this folder to configure custom JS. Create the file `userstyle.css` in this folder to configure custom CSS. Completely restart TurboWarp Desktop (including all windows) to apply.
-
-## Uninstall
-
-See https://desktop.turbowarp.org/uninstall
