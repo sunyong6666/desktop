@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: npm
+    - name: Install dependencies
+      run: npm ci
+    - name: Fetch
+      run: npm run fetch
+
+    - name: Compile
+      run: npm run webpack:prod
+
+    - name: Package Windows
+      if: runner.os == 'Windows'
+      run: |
+        node release-automation/build.js --windows --microsoft-store --x64 --ia32 --arm64 --production
+        node release-automation/build.js --windows-portable --x64 --production
+        node release-automation/build.js --windows-legacy --ia32 --x64 --production
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload Microsoft Store Artifact
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: appx
+        path: dist/*.appx
+
+    - name: Package macOS
+      if: runner.os == 'macOS'
+      run: |
+        # I don't trust GitHub Actions to not accidentally log shell substitutions somewhere, so we
+        # use Python instead of "echo $SECRET >" to write the private key to a file as needed by notarytool.
+        python3 -c "import os; open(os.getenv('APPLE_API_KEY_NAME'), 'w').write(os.getenv('APPLE_API_KEY_DATA'))" >/dev/null 2>&1
+        # @electron/notaraize documentation says key should be an absolute path
+        export APPLE_API_KEY="$(pwd)/$APPLE_API_KEY_NAME"
+        node release-automation/build.js --mac --universal --production
+        node release-automation/build.js --mac-legacy --x64 --production
+        # for safety
+        rm "$APPLE_API_KEY_NAME"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_NAME: ${{ secrets.APPLE_API_KEY_NAME }}
+        APPLE_API_KEY_DATA: ${{ secrets.APPLE_API_KEY_DATA }}
+        # base64 -i Certificates.p12
+        CSC_LINK: ${{ secrets.APPLE_CSC_LINK }}
+        # electron-builder documentation says password won't be escaped, so don't use any
+        # special characters that the shell will mess with
+        CSC_KEY_PASSWORD: ${{ secrets.APPLE_CSC_KEY_PASSWORD }}
+
+    - name: Package Linux
+      if: runner.os == 'Linux'
+      run: |
+        node release-automation/build.js --debian --tarball --appimage --x64 --armv7l --arm64 --production
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

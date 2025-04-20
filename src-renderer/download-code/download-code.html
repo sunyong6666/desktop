@@ -1,0 +1,218 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <main>
+        <h1>hello world</h1>
+    </main>
+    
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"> -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        color: black;
+        background-color: white;
+        accent-color: #ff4c4c;
+      }
+      main {
+        padding: 20px;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 100vh;
+        border: 20px solid hsla(0, 100%, 65%, 1);
+      }
+      .title {
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin: 0.5rem 0;
+      }
+      .label {
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+      }
+      select {
+        width: 100%;
+        font: inherit;
+      }
+      button {
+        display: block;
+        cursor: pointer;
+        font: inherit;
+        margin: 0.5rem 0;
+      }
+      .warning {
+        background-color: yellow;
+        color: black;
+        border: 1px solid black;
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+     <!-- 引入 highlight.js 的 CSS 文件 -->
+     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css"> -->
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.css">
+  </head>
+  <body>
+    <main>
+      <script>
+    
+        
+        // alert(locale);
+        // alert(JSON.stringify(strings));
+        
+        // document.documentElement.lang = locale;
+
+        // const settings = DesktopSettingsPreload.getSettings();
+
+        
+        
+      </script>
+
+      <div id="information">
+        <input id="place" placeholder="坑位">
+        <input id="name" placeholder="文件名">
+        <button id="download">下载</button>
+        <button id="save-py">保存</button>
+        <button id="open">打开</button>
+        <button id="check">检查</button>
+        <button id="lua">lua</button>
+        <button id="py">python</button>
+        <!-- <pre>
+          <code id="code" class="python">
+
+          </code>
+        </pre> -->
+        <div id="edit">
+
+        </div>
+      </div>
+
+       <!-- 引入 highlight.js 的 JavaScript 文件 -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script> -->
+    <!-- 初始化 highlight.js -->
+    <!-- <script>hljs.highlightAll();</script> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.js"></script>
+    <!-- 引入 Python 语言支持 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/mode/lua/lua.min.js"></script>
+      <script>
+        document.getElementById('download').addEventListener('click', () => {
+
+          alert('下载')
+          electronAPI.sendPlaceName(document.getElementById('place').value,document.getElementById('name').value);
+          // setTimeout(() => {
+          //   const flag=electronAPI.isPosted()
+          //   if(flag.flag){
+          //     alert('下载成功')
+          //   }else{
+          //     alert('下载失败')
+          //   }
+          // },1500)
+
+        })
+        let code = electronAPI.getCode().CODE
+        // let codeDom=document.getElementById('code')
+        // codeDom.innerHTML = code
+        // codeDom.contentEditable='true'
+
+        
+
+        // let editor = CodeMirror(document.getElementById('edit'), {
+        //   mode: 'python',
+        //   lineNumbers: true,
+        //   value: code
+        // });
+        let editor;
+
+        document.getElementById('lua').addEventListener('click',()=>{
+          editor = CodeMirror(document.getElementById('edit'), {
+          mode: 'lua',
+          lineNumbers: true,
+          value: code
+        });
+        })
+        document.getElementById('py').addEventListener('click',()=>{
+          editor = CodeMirror(document.getElementById('edit'), {
+          mode: 'python',
+          lineNumbers: true,
+          value: code
+        });
+        })
+
+        document.getElementById('save-py').addEventListener('click', () => {
+          console.log(document.getElementById('edit').innerText)
+          console.log(editor.getValue());
+          let blob = new Blob([editor.getValue()], { type: 'text/plain' }); // 创建一个Blob对象，指定内容类型为纯文本
+          let fileDownloadUrl = URL.createObjectURL(blob); // 为Blob对象创建一个临时URL
+
+          const name = 'project';
+          // 创建一个临时的<a>标签用于下载
+          let downloadLink = document.createElement('a');
+          downloadLink.href = fileDownloadUrl;
+          downloadLink.download = name+'.py'; // 指定下载文件的名称
+
+          document.body.appendChild(downloadLink); // 将<a>标签加入到文档中
+          downloadLink.click(); // 模拟点击<a>标签以触发下载
+
+          document.body.removeChild(downloadLink); // 移除<a>标签
+          URL.revokeObjectURL(fileDownloadUrl); // 释放创建的临时URL资源
+          
+        })
+
+        document.getElementById('open').addEventListener('click', () => {
+          let input = document.createElement('input')
+          input.type = 'file'
+          input.id='file-input'
+          input.style.display = 'none'
+          input.click()
+          input.addEventListener('change',async (e)=>{
+              const file = e.target.files[0];
+              console.log(file)
+              let fileContent
+              const reader = new FileReader();
+              reader.onload = await async function(event) {
+                  fileContent = await event.target.result;
+                  console.log('File Content:', fileContent);
+                  editor.setValue(fileContent)
+              };
+              reader.readAsText(file); // 读取文件内容为文本
+              
+          })
+        })
+
+        document.getElementById('check').addEventListener('click', () => {
+          electronAPI.sendCode(editor.getValue())
+        })
+
+        // codeDom.addEventListener('input', () => {
+        //   // 在用户输入后重新应用highlight.js
+        //   hljs.highlightBlock(codeDom);
+        // });
+
+       
+
+      </script>
+    </main>
+  </body>
+</html>
