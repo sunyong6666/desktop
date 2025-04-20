@@ -67,16 +67,11 @@
    ```
    
    
-   
-2. 下载依赖
-
-   ```bash
-   npm ci
-   ```
+  
 
    
 
-3. 编译
+2. 编译
 
    ```bash
    npm run webpack:compile
@@ -84,7 +79,7 @@
 
    
 
-4. 启动electron
+3. 启动electron
 
    ```bash
    npm run electron:start 
@@ -92,7 +87,7 @@
 
    
 
-5. 打包
+4. 打包
 
    ```bash
    npx electron-builder --windows nsis --x64
